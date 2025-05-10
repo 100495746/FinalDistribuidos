@@ -1,0 +1,16 @@
+import socket
+import time
+
+HOST = '127.0.0.1'
+PORT = 5051
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.connect((HOST, PORT))
+
+    # Enviar comando y nombre juntos en un solo sendall, ambos terminados en \0
+    s.sendall(b'REGISTER\x00')
+    s.sendall(b'raul\x00')
+
+    print("Enviado, esperando respuesta...")
+    respuesta = s.recv(4)
+    print("Código de respuesta:", int.from_bytes(respuesta, byteorder='little'))

@@ -1,0 +1,3 @@
+
+
+int sd = socket(AF_INET, SOCK_STREAM, 0);

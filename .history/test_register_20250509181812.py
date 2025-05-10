@@ -1,0 +1,17 @@
+import socket
+import time
+
+HOST = '127.0.0.1'
+PORT = 5050
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.connect((HOST, PORT))
+
+    s.sendall(b'REGISTER\x00')
+    time.sleep(0.1)  # Espera 100 ms
+
+    s.sendall(b'raul\x00')
+
+    print("Enviado, esperando respuesta...")
+    respuesta = s.recv(4)
+    print("Código de respuesta:", int.from_bytes(respuesta, byteorder='little'))
