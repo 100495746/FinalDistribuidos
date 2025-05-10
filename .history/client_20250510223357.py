@@ -407,8 +407,7 @@ class client :
                     print("c> ERROR: FILE NOT FOUND")
                     return client.RC.USER_ERROR
                 else:
-                    #print("GET_FILE → Error en el cliente remoto.")
-                    print("c> ERROR: REMOTE ERROR")
+                    print("GET_FILE → Error en el cliente remoto.")
                     return client.RC.ERROR
 
         except Exception as e:

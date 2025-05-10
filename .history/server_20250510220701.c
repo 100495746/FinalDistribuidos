@@ -68,7 +68,7 @@ cada cliente que se conecte:
 */
 
 void *handle_client(void *arg) {
-    // printf("DEBUG: cliente conectado\n"); 
+    printf("DEBUG: cliente conectado\n"); 
 
     int cliente_sd = *(int *)arg;
     free(arg);
@@ -80,7 +80,7 @@ void *handle_client(void *arg) {
         return NULL;
     }
 
-    // printf("DEBUG: recibido comando '%s'\n", comando);
+    printf("DEBUG: recibido comando '%s'\n", comando);
 
     // según que hayamos escrito en la terminal...
     if (strcmp(comando, "REGISTER") == 0) {
@@ -105,7 +105,7 @@ void *handle_client(void *arg) {
 
     // Ejemplo representativo de uso real de sendMessage()
     // Al final de handle_client(), justo antes de cerrar el socket
-    // sendMessage(cliente_sd, "Comando procesado correctamente");
+    sendMessage(cliente_sd, "Comando procesado correctamente");
 
     close(cliente_sd);
     return NULL;
@@ -141,7 +141,7 @@ void *publish(int cliente_sd) {
     char descripcion[256];
     int resultado;
 
-    // printf("DEBUG: esperando nombre del usuario...\n");
+    printf("DEBUG: esperando nombre del usuario...\n");
 
     if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1) {
         perror("Error leyendo el nombre del usuario");
@@ -180,9 +180,9 @@ void *publish(int cliente_sd) {
     strcpy(u->ficheros[u->num_ficheros].descripcion, descripcion);
     u->num_ficheros++;
 
-    // printf("DEBUG: fichero publicado: path='%s', descripcion='%s'\n",
-    //     u->ficheros[u->num_ficheros - 1].path,
-    //     u->ficheros[u->num_ficheros - 1].descripcion);
+    printf("DEBUG: fichero publicado: path='%s', descripcion='%s'\n",
+        u->ficheros[u->num_ficheros - 1].path,
+        u->ficheros[u->num_ficheros - 1].descripcion);
 
     resultado = 0;
     send(cliente_sd, &resultado, sizeof(resultado), 0); // seguimos usando send() para enteros
@@ -201,19 +201,19 @@ void *connect_user(int cliente_sd) {
     int puerto;
     int resultado;
 
-    // printf("DEBUG: esperando nombre del usuario...\n");
+    printf("DEBUG: esperando nombre del usuario...\n");
     if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1) {
         perror("Error leyendo el nombre del usuario");
         return NULL;
     }
-    // printf("DEBUG: nombre recibido: '%s'\n", nombre);
+    printf("DEBUG: nombre recibido: '%s'\n", nombre);
 
     // recv espera un int
     if (recv(cliente_sd, &puerto, sizeof(puerto), 0) <= 0) {
         perror("Error leyendo el puerto del usuario");
         return NULL;
     }
-    // printf("DEBUG: puerto recibido: %d\n", puerto);
+    printf("DEBUG: puerto recibido: %d\n", puerto);
 
     Usuario *u = buscar_usuario(nombre);
     if (u == NULL) {
@@ -249,11 +249,11 @@ void *list_users(int cliente_sd) {
                      usuarios[i].nombre,
                      usuarios[i].ip,
                      usuarios[i].puerto);
-            // sendMessage(cliente_sd, linea); // Comentado, no requerido por el protocolo
+            sendMessage(cliente_sd, linea);
         }
     }
     // Enviar línea vacía para marcar el final
-    // sendMessage(cliente_sd, "\n"); // Comentado, no requerido por el protocolo
+    sendMessage(cliente_sd, "\n");
     return NULL;
 }
 /*
@@ -282,16 +282,16 @@ void *list_content(int cliente_sd) {
 
     Usuario *u = buscar_usuario(nombre);
     if (!u || !u->conectado) {
-        // sendMessage(cliente_sd, "\n"); // Comentado, no requerido por el protocolo
+        sendMessage(cliente_sd, "\n");
         return NULL;
     }
 
     for (int i = 0; i < u->num_ficheros; i++) {
         char linea[512];
         snprintf(linea, sizeof(linea), "%s %s\n", u->ficheros[i].path, u->ficheros[i].descripcion);
-        // sendMessage(cliente_sd, linea); // Comentado, no requerido por el protocolo
+        sendMessage(cliente_sd, linea);
     }
-    // sendMessage(cliente_sd, "\n"); // Comentado, no requerido por el protocolo
+    sendMessage(cliente_sd, "\n");
     return NULL;
 }
 

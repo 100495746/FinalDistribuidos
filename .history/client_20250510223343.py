@@ -403,12 +403,10 @@ class client :
                     print("c> GET_FILE OK")
                     return client.RC.OK
                 elif status == b'\x01':
-                    #print("GET_FILE → El fichero no existe.")
-                    print("c> ERROR: FILE NOT FOUND")
+                    print("GET_FILE → El fichero no existe.")
                     return client.RC.USER_ERROR
                 else:
-                    #print("GET_FILE → Error en el cliente remoto.")
-                    print("c> ERROR: REMOTE ERROR")
+                    print("GET_FILE → Error en el cliente remoto.")
                     return client.RC.ERROR
 
         except Exception as e:

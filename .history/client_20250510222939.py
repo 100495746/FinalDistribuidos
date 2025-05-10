@@ -283,13 +283,11 @@ class client :
                 s.sendall(fecha.encode() + b'\x00')
 
                 #print("LIST_USERS →")
-                print("c> LIST_USERS")
                 while True:
                     line = client.readString(s)
                     if line == "\n":
                         break
                     print("  " + line.strip())
-
                 return client.RC.OK
         except Exception as e:
             print("LIST_USERS Exception:", str(e))
@@ -399,16 +397,13 @@ class client :
                     content = peer.recv(int(size))
                     with open(local_FileName, "wb") as f:
                         f.write(content)
-                    #print("GET_FILE → Fichero recibido correctamente.")
-                    print("c> GET_FILE OK")
+                    print("GET_FILE → Fichero recibido correctamente.")
                     return client.RC.OK
                 elif status == b'\x01':
-                    #print("GET_FILE → El fichero no existe.")
-                    print("c> ERROR: FILE NOT FOUND")
+                    print("GET_FILE → El fichero no existe.")
                     return client.RC.USER_ERROR
                 else:
-                    #print("GET_FILE → Error en el cliente remoto.")
-                    print("c> ERROR: REMOTE ERROR")
+                    print("GET_FILE → Error en el cliente remoto.")
                     return client.RC.ERROR
 
         except Exception as e:

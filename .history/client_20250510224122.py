@@ -76,92 +76,88 @@ class client :
             print("REGISTER Exception:", str(e))
             return client.RC.ERROR
         
-    @staticmethod
-    def connect(user):
-        base_port = 4500
-        port = base_port + (sum(ord(c) for c in user) % 1000)
-        try:
-            def file_server_thread():
-                # Este hilo actúa como servidor de ficheros en el cliente
-                
-                listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                listener.bind(('', port))  # El puerto debe coincidir con el dado en CONNECT
-                
-                listener.listen(1)
-                print(f"CLIENT FILE SERVER LISTENING on port {port}...")
+@staticmethod
+def connect(user):
+    base_port = 4500
+    port = base_port + (sum(ord(c) for c in user) % 1000)
+    try:
+        def file_server_thread():
+            listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listener.bind(('', port))
+            listener.listen(1)
+            print(f"CLIENT FILE SERVER LISTENING on port {port}...")
 
-                while True:
-                    conn, addr = listener.accept()
-                    print("Connection received from:", addr)
+            while True:
+                conn, addr = listener.accept()
+                print("Connection received from:", addr)
+
+                try:
+                    cmd = client.readString(conn)
+                    if cmd != "GET_FILE":
+                        conn.close()
+                        continue
+
+                    remote_path = client.readString(conn)
+                    local_name = client.readString(conn)
+
+                    print(f"GET_FILE request: path={remote_path}, dest={local_name}")
 
                     try:
-                        # Leer comando y parámetros
-                        cmd = client.readString(conn)
-                        if cmd != "GET_FILE":
-                            print("Invalid command received:", cmd)
-                            conn.close()
-                            continue
+                        with open(remote_path, "rb") as f:
+                            content = f.read()
+                            conn.sendall(b'\x00')
+                            conn.sendall(f"{len(content)}\0".encode())
+                            conn.sendall(content)
+                    except FileNotFoundError:
+                        conn.sendall(b'\x01')
+                    except:
+                        conn.sendall(b'\x02')
 
-                        remote_path = client.readString(conn)
-                        local_name = client.readString(conn)
+                except Exception as e:
+                    print("Error during GET_FILE handling:", str(e))
 
-                        print(f"GET_FILE request: path={remote_path}, dest={local_name}")
+                conn.close()
 
-                        try:
-                            #abrimos tcp
-                            with open(remote_path, "rb") as f:
-                                content = f.read()
-                                conn.sendall(b'\x00')  # status OK
-                                conn.sendall(f"{len(content)}\0".encode())
-                                conn.sendall(content)
-                        except FileNotFoundError:
-                            conn.sendall(b'\x01')  # no existe
-                        except:
-                            conn.sendall(b'\x02')  # error
+        threading.Thread(target=file_server_thread, daemon=True).start()
 
-                    except Exception as e:
-                        print("Error during GET_FILE handling:", str(e))
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((client._server, client._port))
+            s.sendall(b'CONNECT\x00')
+            s.sendall(user.encode() + b'\x00')
+            s.sendall(struct.pack("i", port))
 
-                    conn.close()
+            # Obtener la IP real del cliente (no usar 127.0.0.1)
+            temp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            temp.connect(("8.8.8.8", 80))
+            ip = temp.getsockname()[0]
+            temp.close()
 
-            # Iniciar hilo servidor de ficheros al conectar
-            threading.Thread(target=file_server_thread, daemon=True).start()
+            s.sendall(ip.encode() + b'\x00')  # ✅ Enviar IP tras el puerto
 
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((client._server, client._port))
-                s.sendall(b'CONNECT\x00')
-                s.sendall(user.encode() + b'\x00')
-                s.sendall(struct.pack("i", port))
+            fecha = client.get_datetime()
+            s.sendall(fecha.encode() + b'\x00')
 
-                # enseñamos la fecha
-                fecha = client.get_datetime()
-                s.sendall(fecha.encode() + b'\x00')
+            response = s.recv(4)
+            result = int.from_bytes(response, byteorder='little', signed=True)
 
-                response = s.recv(4)
-                result = int.from_bytes(response, byteorder='little', signed=True)
-                #message = client.readString(s)
-
-                # print("CONNECT →", message)
-                if result == 0:
-                    print("c> CONNECT OK")
-                    client._current_user = user
-                    return client.RC.OK
-                elif result == 1:
-                    print("c> CONNECT FAIL , USER DOES NOT EXIST")
-                elif result == 2:
-                    print("c> USER ALREADY CONNECTED")
-                elif result == 3:
-                    print("c> CONNECT FAIL")
-                else:
-                    print("c> ERROR: UNKNOWN ERROR")
-                    client._current_user = user
-                    
-                # devuelve ok si no hay errores
+            if result == 0:
+                print("c> CONNECT OK")
+                client._current_user = user
                 return client.RC.OK
-        except Exception as e:
-            print("CONNECT Exception:", str(e))
-            return client.RC.ERROR
+            elif result == 1:
+                print("c> CONNECT FAIL , USER DOES NOT EXIST")
+            elif result == 2:
+                print("c> USER ALREADY CONNECTED")
+            elif result == 3:
+                print("c> CONNECT FAIL")
+            else:
+                print("c> ERROR: UNKNOWN ERROR")
+
+            return client.RC.USER_ERROR
+    except Exception as e:
+        print("CONNECT Exception:", str(e))
+        return client.RC.ERROR
 
    
 

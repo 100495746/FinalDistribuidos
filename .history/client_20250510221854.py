@@ -140,25 +140,16 @@ class client :
 
                 response = s.recv(4)
                 result = int.from_bytes(response, byteorder='little', signed=True)
-                #message = client.readString(s)
+                message = client.readString(s)
 
                 # print("CONNECT →", message)
-                if result == 0:
-                    print("c> CONNECT OK")
-                    client._current_user = user
-                    return client.RC.OK
-                elif result == 1:
-                    print("c> CONNECT FAIL , USER DOES NOT EXIST")
-                elif result == 2:
-                    print("c> USER ALREADY CONNECTED")
-                elif result == 3:
-                    print("c> CONNECT FAIL")
-                else:
-                    print("c> ERROR: UNKNOWN ERROR")
-                    client._current_user = user
-                    
+                if result != 0:
+                    print("c> ERROR")
+                    return client.RC.USER_ERROR
+                client._current_user = user
+                
                 # devuelve ok si no hay errores
-                return client.RC.OK
+                return client.RC.OK if result == 0 else client.RC.USER_ERROR
         except Exception as e:
             print("CONNECT Exception:", str(e))
             return client.RC.ERROR
@@ -181,16 +172,7 @@ class client :
 
                 response = s.recv(4)
                 result = int.from_bytes(response, byteorder='little', signed=True)
-                #print("UNREGISTER → Resultado:", result)
-
-                if result == 0:
-                    print("c> UNREGISTER OK")
-                elif result == 1:
-                    print("c> ERROR: USER NOT REGISTERED")
-                elif result == 2:
-                    print("c> ERROR: USER CONNECTED")
-                else:
-                    print("c> ERROR: UNKNOWN ERROR")
+                print("UNREGISTER → Resultado:", result)
                 return client.RC.OK if result == 0 else client.RC.USER_ERROR
         except Exception as e:
             print("UNREGISTER Exception:", str(e))
@@ -210,18 +192,11 @@ class client :
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
+                # recibe hasta 4 bytes y los almacena en response
                 response = s.recv(4)
+                #traducimos de bytes a int
                 result = int.from_bytes(response, byteorder='little', signed=True)
-
-                if result == 0:
-                    print("c> DISCONNECT OK")
-                elif result == 1:
-                    print("c> ERROR: USER NOT REGISTERED")
-                elif result == 2:
-                    print("c> ERROR: USER NOT CONNECTED")
-                else:
-                    print("c> ERROR: UNKNOWN ERROR")
-
+                print("DISCONNECT → Resultado:", result)
                 return client.RC.OK if result == 0 else client.RC.USER_ERROR
         except Exception as e:
             print("DISCONNECT Exception:", str(e))
@@ -250,7 +225,7 @@ class client :
                 #message = client.readString(s)
 
                 #print("PUBLISH →", message)
-                if result == 0:
+                            if result == 0:
                     print("c> PUBLISH OK")
                 elif result == 1:
                     print("c> ERROR: USER NOT REGISTERED")
@@ -282,14 +257,12 @@ class client :
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
-                #print("LIST_USERS →")
-                print("c> LIST_USERS")
+                print("LIST_USERS →")
                 while True:
                     line = client.readString(s)
                     if line == "\n":
                         break
                     print("  " + line.strip())
-
                 return client.RC.OK
         except Exception as e:
             print("LIST_USERS Exception:", str(e))
@@ -299,9 +272,6 @@ class client :
     @staticmethod
     def delete(fileName):
         try:
-            if client._current_user is None:
-                print("Error: no user connected.")
-                return client.RC.USER_ERROR            
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((client._server, client._port))
                 s.sendall(b'DELETE\x00')
@@ -316,17 +286,7 @@ class client :
 
                 response = s.recv(4)
                 result = int.from_bytes(response, byteorder='little', signed=True)
-                # print("DELETE → Resultado:", result)
-                if result == 0:
-                    print("c> DELETE OK")
-                elif result == 1:
-                    print("c> ERROR: USER NOT REGISTERED")
-                elif result == 2:
-                    print("c> ERROR: USER NOT CONNECTED")
-                elif result == 3:
-                    print("c> ERROR: FILE NOT FOUND")
-                else:
-                    print("c> ERROR: UNKNOWN ERROR")
+                print("DELETE → Resultado:", result)
                 return client.RC.OK if result == 0 else client.RC.USER_ERROR
         except Exception as e:
             print("DELETE Exception:", str(e))
@@ -399,16 +359,13 @@ class client :
                     content = peer.recv(int(size))
                     with open(local_FileName, "wb") as f:
                         f.write(content)
-                    #print("GET_FILE → Fichero recibido correctamente.")
-                    print("c> GET_FILE OK")
+                    print("GET_FILE → Fichero recibido correctamente.")
                     return client.RC.OK
                 elif status == b'\x01':
-                    #print("GET_FILE → El fichero no existe.")
-                    print("c> ERROR: FILE NOT FOUND")
+                    print("GET_FILE → El fichero no existe.")
                     return client.RC.USER_ERROR
                 else:
-                    #print("GET_FILE → Error en el cliente remoto.")
-                    print("c> ERROR: REMOTE ERROR")
+                    print("GET_FILE → Error en el cliente remoto.")
                     return client.RC.ERROR
 
         except Exception as e:

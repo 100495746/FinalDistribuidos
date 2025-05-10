@@ -408,7 +408,6 @@ class client :
                     return client.RC.USER_ERROR
                 else:
                     #print("GET_FILE → Error en el cliente remoto.")
-                    print("c> ERROR: REMOTE ERROR")
                     return client.RC.ERROR
 
         except Exception as e:

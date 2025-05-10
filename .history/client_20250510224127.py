@@ -82,12 +82,9 @@ class client :
         port = base_port + (sum(ord(c) for c in user) % 1000)
         try:
             def file_server_thread():
-                # Este hilo actúa como servidor de ficheros en el cliente
-                
                 listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                listener.bind(('', port))  # El puerto debe coincidir con el dado en CONNECT
-                
+                listener.bind(('', port))
                 listener.listen(1)
                 print(f"CLIENT FILE SERVER LISTENING on port {port}...")
 
@@ -96,10 +93,8 @@ class client :
                     print("Connection received from:", addr)
 
                     try:
-                        # Leer comando y parámetros
                         cmd = client.readString(conn)
                         if cmd != "GET_FILE":
-                            print("Invalid command received:", cmd)
                             conn.close()
                             continue
 
@@ -109,23 +104,21 @@ class client :
                         print(f"GET_FILE request: path={remote_path}, dest={local_name}")
 
                         try:
-                            #abrimos tcp
                             with open(remote_path, "rb") as f:
                                 content = f.read()
-                                conn.sendall(b'\x00')  # status OK
+                                conn.sendall(b'\x00')
                                 conn.sendall(f"{len(content)}\0".encode())
                                 conn.sendall(content)
                         except FileNotFoundError:
-                            conn.sendall(b'\x01')  # no existe
+                            conn.sendall(b'\x01')
                         except:
-                            conn.sendall(b'\x02')  # error
+                            conn.sendall(b'\x02')
 
                     except Exception as e:
                         print("Error during GET_FILE handling:", str(e))
 
                     conn.close()
 
-            # Iniciar hilo servidor de ficheros al conectar
             threading.Thread(target=file_server_thread, daemon=True).start()
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -134,15 +127,20 @@ class client :
                 s.sendall(user.encode() + b'\x00')
                 s.sendall(struct.pack("i", port))
 
-                # enseñamos la fecha
+                # Obtener la IP real del cliente (no usar 127.0.0.1)
+                temp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                temp.connect(("8.8.8.8", 80))
+                ip = temp.getsockname()[0]
+                temp.close()
+
+                s.sendall(ip.encode() + b'\x00')  # ✅ Enviar IP tras el puerto
+
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
                 response = s.recv(4)
                 result = int.from_bytes(response, byteorder='little', signed=True)
-                #message = client.readString(s)
 
-                # print("CONNECT →", message)
                 if result == 0:
                     print("c> CONNECT OK")
                     client._current_user = user
@@ -155,10 +153,8 @@ class client :
                     print("c> CONNECT FAIL")
                 else:
                     print("c> ERROR: UNKNOWN ERROR")
-                    client._current_user = user
-                    
-                # devuelve ok si no hay errores
-                return client.RC.OK
+
+                return client.RC.USER_ERROR
         except Exception as e:
             print("CONNECT Exception:", str(e))
             return client.RC.ERROR
