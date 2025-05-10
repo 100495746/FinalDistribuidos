@@ -1,19 +1,21 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <pthread.h>
 #include "server_utils.h"
-#include <arpa/inet.h>  // Para inet_ntop()
 
 extern Usuario *usuarios;
 extern int num_usuarios;
 
-void *handle_client(void *arg);
-int main() {
-    int puerto = 5051; // Define el puerto a usar
+
+
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        fprintf(stderr, "Uso: ./servidor -p <puerto>\n");
+        return -2; // Error de argumentos
+    }
+
+    int puerto = atoi(argv[2]); // Define el puerto, que saca de la linea de comandos
+    if (puerto <= 0 || puerto > 65535) {
+        fprintf(stderr, "Puerto inválido. Debe estar entre 1 y 65535.\n");
+        return -2; // Error de  valor de puerto invalido
+    }
     int sd = socket(AF_INET, SOCK_STREAM, 0); //usa IPv4 y por tcp (un socket es parecido a un descriptor de archivo fd)
 
     struct sockaddr_in direccion;
@@ -24,8 +26,11 @@ int main() {
     bind(sd, (struct sockaddr *)&direccion, sizeof(direccion)); //asociamos el socket a la ip y puerto local
 
     listen(sd,10); // "encendemos" el socket para recibir conexiones externas, ponemos 10 como maximo de cola
-    printf("s> init server 0.0.0.0:%d\n", puerto); // mensaje de inicio
-    printf("s>\n");
+    char ip_local[16]; //len = 16 para IPv4
+    obtener_ip_local(ip_local, sizeof(ip_local)); //obtenemos la ip local
+    printf("s> %s:%d\n", ip_local, puerto); // mensaje de inicio
+    fflush(stdout);
+    printf("s>");
 
     while (1) {
         struct sockaddr_in cliente;
@@ -385,3 +390,20 @@ void *delete_file(int cliente_sd) {
     return NULL;
 }
 
+// funcion para obtener la ip_local
+void obtener_ip_local(char *ip_local, size_t size) {
+    struct ifaddrs *ifaddr, *ifa;
+    if (getifaddrs(&ifaddr) == -1) {
+        perror("getifaddrs");
+        return;
+    }
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
+            inet_ntop(AF_INET, &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr, ip_local, size);
+            break;
+        }
+    }
+
+    freeifaddrs(ifaddr);
+}

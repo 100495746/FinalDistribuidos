@@ -23,7 +23,7 @@ Compila y ejecuta el servidor principal que atiende a los clientes:
 cd FinalDistribuidos
 make clean
 make
-./servidor
+./servidor -p (numero de PUERTO)
 ```
 
 Debe mostrar:
