@@ -192,7 +192,7 @@ void *connect_user(int cliente_sd) {
     }
     printf("DEBUG: nombre recibido: '%s'\n", nombre);
 
-    // recv espera un int
+    // re
     if (recv(cliente_sd, &puerto, sizeof(puerto), 0) <= 0) {
         perror("Error leyendo el puerto del usuario");
         return NULL;

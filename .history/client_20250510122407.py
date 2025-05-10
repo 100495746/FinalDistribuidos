@@ -17,7 +17,7 @@ class client :
     # * @brief Return codes for the protocol methods
 
     class RC(Enum) :
-        # tipos de mensajes
+        # tipos de 
 
         OK = 0
 
@@ -33,15 +33,12 @@ class client :
 
     _port = -1
 
-    _current_user = None
-
 
 
     # ******************** METHODS *******************
 
     @staticmethod
     def readString(sock):
-        #lee byte a byte
         a = ''
         while True:
             msg = sock.recv(1)
@@ -53,16 +50,10 @@ class client :
     @staticmethod
     def register(user):
         try:
-            # Crea un socket TCP (IPv4) y lo gestiona automáticamente con el contexto 'with'.
-            # Al salir del bloque, el socket se cierra automáticamente, incluso si ocurre una excepción.
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((client._server, client._port))
-                # Envía todos los datos especificados al socket, asegurando que se transmita completamente.
-                # En este caso, envía el comando 'REGISTER' seguido de un byte nulo como terminador.
                 s.sendall(b'REGISTER\x00')
                 s.sendall(user.encode() + b'\x00')
-                fecha = client.get_datetime()
-                s.sendall(fecha.encode() + b'\x00')
 
                 response = s.recv(4)
                 result = int.from_bytes(response, byteorder='little', signed=True)
@@ -73,7 +64,6 @@ class client :
         except Exception as e:
             print("REGISTER Exception:", str(e))
             return client.RC.ERROR
-        
     @staticmethod
     def connect(user):
         base_port = 4500
@@ -107,7 +97,6 @@ class client :
                         print(f"GET_FILE request: path={remote_path}, dest={local_name}")
 
                         try:
-                            #abrimos tcp
                             with open(remote_path, "rb") as f:
                                 content = f.read()
                                 conn.sendall(b'\x00')  # status OK
@@ -131,19 +120,11 @@ class client :
                 s.sendall(b'CONNECT\x00')
                 s.sendall(user.encode() + b'\x00')
                 s.sendall(struct.pack("i", port))
-
-                # enseñamos la fecha
-                fecha = client.get_datetime()
-                s.sendall(fecha.encode() + b'\x00')
-
                 response = s.recv(4)
                 result = int.from_bytes(response, byteorder='little', signed=True)
                 message = client.readString(s)
 
                 print("CONNECT →", message)
-                client._current_user = user
-                
-                # devuelve ok si no hay errores
                 return client.RC.OK if result == 0 else client.RC.USER_ERROR
         except Exception as e:
             print("CONNECT Exception:", str(e))
@@ -152,44 +133,29 @@ class client :
    
 
     @staticmethod
-    def unregister(user):
-        try:
-            if client._current_user is None:
-                print("Error: no user connected.")
-                return client.RC.USER_ERROR
-            
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((client._server, client._port))
-                s.sendall(b'UNREGISTER\x00')
-                s.sendall(user.encode() + b'\x00')
-                fecha = client.get_datetime()
-                s.sendall(fecha.encode() + b'\x00')
 
-                response = s.recv(4)
-                result = int.from_bytes(response, byteorder='little', signed=True)
-                print("UNREGISTER → Resultado:", result)
-                return client.RC.OK if result == 0 else client.RC.USER_ERROR
-        except Exception as e:
-            print("UNREGISTER Exception:", str(e))
-            return client.RC.ERROR
+    def  unregister(user) :
+
+        #  Write your code here
+
+        return client.RC.ERROR
+
+
+
+
+
+
     
 
     @staticmethod
     def disconnect(user):
         try:
-            if client._current_user is None:
-                print("Error: no user connected.")
-                return client.RC.USER_ERROR
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((client._server, client._port))
                 s.sendall(b'DISCONNECT\x00')
                 s.sendall(user.encode() + b'\x00')
-                fecha = client.get_datetime()
-                s.sendall(fecha.encode() + b'\x00')
 
-                # recibe hasta 4 bytes y los almacena en response
                 response = s.recv(4)
-                #traducimos de bytes a int
                 result = int.from_bytes(response, byteorder='little', signed=True)
                 print("DISCONNECT → Resultado:", result)
                 return client.RC.OK if result == 0 else client.RC.USER_ERROR
@@ -198,19 +164,17 @@ class client :
             return client.RC.ERROR
 
 
+
     @staticmethod
     def publish(fileName, description):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((client._server, client._port))
                 s.sendall(b'PUBLISH\x00')
-                s.sendall(client._current_user.encode() + b'\x00')  # sustituir por el usuario si gestionas sesión (lo hago luego)
+                s.sendall(b'raul\x00')  # sustituir por el usuario si gestionas sesión
                 abs_path = os.path.abspath(fileName)
                 s.sendall(abs_path.encode() + b'\x00')
                 s.sendall(description.encode() + b'\x00')
-
-                fecha = client.get_datetime()
-                s.sendall(fecha.encode() + b'\x00')
 
                 response = s.recv(4)
                 result = int.from_bytes(response, byteorder='little', signed=True)
@@ -234,8 +198,6 @@ class client :
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((client._server, client._port))
                 s.sendall(b'LIST_USERS\x00')
-                fecha = client.get_datetime()
-                s.sendall(fecha.encode() + b'\x00')
 
                 print("LIST_USERS →")
                 while True:
@@ -250,27 +212,11 @@ class client :
 
 
     @staticmethod
-    def delete(fileName):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((client._server, client._port))
-                s.sendall(b'DELETE\x00')
-                if client._current_user is None:
-                    print("Error: no user connected.")
-                    return client.RC.USER_ERROR
-                s.sendall(client._current_user.encode() + b'\x00')
-                abs_path = os.path.abspath(fileName)
-                s.sendall(abs_path.encode() + b'\x00')
-                fecha = client.get_datetime()
-                s.sendall(fecha.encode() + b'\x00')
+    def  delete(fileName) :
 
-                response = s.recv(4)
-                result = int.from_bytes(response, byteorder='little', signed=True)
-                print("DELETE → Resultado:", result)
-                return client.RC.OK if result == 0 else client.RC.USER_ERROR
-        except Exception as e:
-            print("DELETE Exception:", str(e))
-            return client.RC.ERROR
+        #  Write your code here
+
+        return client.RC.ERROR
 
 
     @staticmethod
@@ -280,17 +226,13 @@ class client :
                 s.connect((client._server, client._port))
                 s.sendall(b'LIST_CONTENT\x00')
                 s.sendall(user.encode() + b'\x00')
-                fecha = client.get_datetime()
-                s.sendall(fecha.encode() + b'\x00')              
 
                 print("LIST_CONTENT →")
-                #Imprime los archivos asociados al cliente
                 while True:
                     line = client.readString(s)
                     if line == "\n":
                         break
                     print("  " + line.strip())
-
                 return client.RC.OK
         except Exception as e:
             print("LIST_CONTENT Exception:", str(e))
@@ -314,8 +256,6 @@ class client :
                 s.sendall(user.encode() + b'\x00')
                 s.sendall(remote_FileName.encode() + b'\x00')
                 s.sendall(local_FileName.encode() + b'\x00')
-                fecha = client.get_datetime()
-                s.sendall(fecha.encode() + b'\x00')
 
                 response = s.recv(4)
                 result = int.from_bytes(response, byteorder='little', signed=True)
@@ -331,7 +271,6 @@ class client :
                 peer.sendall(b'GET_FILE\x00')
                 peer.sendall(remote_FileName.encode() + b'\x00')
                 peer.sendall(local_FileName.encode() + b'\x00')
-                
 
                 status = peer.recv(1)
                 if status == b'\x00':
@@ -352,15 +291,6 @@ class client :
             print("GET_FILE Exception:", str(e))
             return client.RC.ERROR
 
-
-    @staticmethod
-    def get_datetime():
-        try:
-            import requests
-            response = requests.get("http://127.0.0.1:5052/datetime")
-            return response.text
-        except:
-            return "FECHA NO DISPONIBLE"
 
     # *
 
@@ -407,10 +337,6 @@ class client :
                         if (len(line) == 2) :
 
                             client.unregister(line[1])
-                        if client._current_user is None:
-                            print("Error: no user connected.")
-                        elif len(line) == 1:
-                            client.unregister(client._current_user)
 
                         else :
 
@@ -470,23 +396,27 @@ class client :
 
 
 
-                    elif(line[0] == "LIST_CONTENT") :
-                        if len(line) == 2:
+                    elif(line[0]=="LIST_CONTENT") :
+
+                        if (len(line) == 2) :
+
                             client.listcontent(line[1])
-                        elif len(line) == 1 and client._current_user is not None:
-                            client.listcontent(client._current_user)
-                        else:
+
+                        else :
+
                             print("Syntax error. Usage: LIST_CONTENT <userName>")
 
 
 
                     elif(line[0]=="DISCONNECT") :
-                        if client._current_user is None:
-                            print("Error: no user connected.")
-                        elif len(line) == 1:
-                            client.disconnect(client._current_user)
-                        else:
-                            print("Syntax error. Use: DISCONNECT")
+
+                        if (len(line) == 2) :
+
+                            client.disconnect(line[1])
+
+                        else :
+
+                            print("Syntax error. Usage: DISCONNECT <userName>")
 
 
 

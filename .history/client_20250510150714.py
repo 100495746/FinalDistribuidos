@@ -204,11 +204,10 @@ class client :
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((client._server, client._port))
                 s.sendall(b'PUBLISH\x00')
-                s.sendall(client._current_user.encode() + b'\x00')  # sustituir por el usuario si gestionas sesión (lo hago luego)
+                s.sendall(user.encode() + b'\x00')  # sustituir por el usuario si gestionas sesión (lo hago luego)
                 abs_path = os.path.abspath(fileName)
                 s.sendall(abs_path.encode() + b'\x00')
                 s.sendall(description.encode() + b'\x00')
-
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
@@ -284,13 +283,11 @@ class client :
                 s.sendall(fecha.encode() + b'\x00')              
 
                 print("LIST_CONTENT →")
-                #Imprime los archivos asociados al cliente
                 while True:
                     line = client.readString(s)
                     if line == "\n":
                         break
                     print("  " + line.strip())
-
                 return client.RC.OK
         except Exception as e:
             print("LIST_CONTENT Exception:", str(e))

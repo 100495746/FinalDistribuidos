@@ -77,7 +77,6 @@ void *handle_client(void *arg) {
 
     printf("DEBUG: recibido comando '%s'\n", comando);
 
-    // según que hayamos escrito en la terminal...
     if (strcmp(comando, "REGISTER") == 0) {
         register_client(cliente_sd);
     } else if (strcmp(comando, "PUBLISH") == 0) {
@@ -92,10 +91,6 @@ void *handle_client(void *arg) {
         get_file(cliente_sd);
     } else if (strcmp(comando, "DISCONNECT") == 0) {
         disconnect_user(cliente_sd);
-    } else if (strcmp(comando, "UNREGISTER") == 0) {
-        unregister_user(cliente_sd);
-    } else if (strcmp(comando, "DELETE") == 0) {
-        delete_file(cliente_sd);
     }
 
     // Ejemplo representativo de uso real de sendMessage()
@@ -149,7 +144,6 @@ void *publish(int cliente_sd) {
         return NULL;
     }
 
-    // creamos el nuevo fichero
     File *nuevo = malloc((u->num_ficheros + 1) * sizeof(File));
     if (nuevo == NULL) {
         resultado = 2;
@@ -163,7 +157,6 @@ void *publish(int cliente_sd) {
     strcpy(u->ficheros[u->num_ficheros].path, path);
     strcpy(u->ficheros[u->num_ficheros].descripcion, descripcion);
     u->num_ficheros++;
-
     printf("DEBUG: fichero publicado: path='%s', descripcion='%s'\n",
         u->ficheros[u->num_ficheros - 1].path,
         u->ficheros[u->num_ficheros - 1].descripcion);
@@ -192,7 +185,6 @@ void *connect_user(int cliente_sd) {
     }
     printf("DEBUG: nombre recibido: '%s'\n", nombre);
 
-    // recv espera un int
     if (recv(cliente_sd, &puerto, sizeof(puerto), 0) <= 0) {
         perror("Error leyendo el puerto del usuario");
         return NULL;
@@ -321,67 +313,6 @@ void *disconnect_user(int cliente_sd) {
 
     int ok = 0;
     send(cliente_sd, &ok, sizeof(ok), 0);
-    return NULL;
-}
-
-// Elimina al usuario completamente del sistema
-void *unregister_user(int cliente_sd) {
-    char nombre[256];
-    if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1) {
-        perror("Error leyendo nombre en UNREGISTER");
-        return NULL;
-    }
-
-    for (int i = 0; i < num_usuarios; i++) {
-        if (strcmp(usuarios[i].nombre, nombre) == 0) {
-            free(usuarios[i].ficheros);
-            for (int j = i; j < num_usuarios - 1; j++) {
-                usuarios[j] = usuarios[j + 1];
-            }
-            num_usuarios--;
-            int ok = 0;
-            send(cliente_sd, &ok, sizeof(ok), 0);
-            return NULL;
-        }
-    }
-
-    int error = -1;
-    send(cliente_sd, &error, sizeof(error), 0);
-    return NULL;
-}
-
-// Elimina un fichero publicado por un usuario
-void *delete_file(int cliente_sd) {
-    char nombre[256];
-    char path[256];
-
-    if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1 ||
-        readLine(cliente_sd, path, sizeof(path)) < 1) {
-        perror("Error leyendo datos en DELETE");
-        return NULL;
-    }
-
-    Usuario *u = buscar_usuario(nombre);
-    if (!u) {
-        int err = -1;
-        send(cliente_sd, &err, sizeof(err), 0);
-        return NULL;
-    }
-
-    int found = 0;
-    for (int i = 0; i < u->num_ficheros; i++) {
-        if (strcmp(u->ficheros[i].path, path) == 0) {
-            for (int j = i; j < u->num_ficheros - 1; j++) {
-                u->ficheros[j] = u->ficheros[j + 1];
-            }
-            u->num_ficheros--;
-            found = 1;
-            break;
-        }
-    }
-
-    int result = found ? 0 : -1;
-    send(cliente_sd, &result, sizeof(result), 0);
     return NULL;
 }
 

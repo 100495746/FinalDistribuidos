@@ -76,8 +76,7 @@ void *handle_client(void *arg) {
     }
 
     printf("DEBUG: recibido comando '%s'\n", comando);
-
-    // según que hayamos escrito en la terminal...
+    
     if (strcmp(comando, "REGISTER") == 0) {
         register_client(cliente_sd);
     } else if (strcmp(comando, "PUBLISH") == 0) {
@@ -149,7 +148,6 @@ void *publish(int cliente_sd) {
         return NULL;
     }
 
-    // creamos el nuevo fichero
     File *nuevo = malloc((u->num_ficheros + 1) * sizeof(File));
     if (nuevo == NULL) {
         resultado = 2;
@@ -163,7 +161,6 @@ void *publish(int cliente_sd) {
     strcpy(u->ficheros[u->num_ficheros].path, path);
     strcpy(u->ficheros[u->num_ficheros].descripcion, descripcion);
     u->num_ficheros++;
-
     printf("DEBUG: fichero publicado: path='%s', descripcion='%s'\n",
         u->ficheros[u->num_ficheros - 1].path,
         u->ficheros[u->num_ficheros - 1].descripcion);
@@ -192,7 +189,6 @@ void *connect_user(int cliente_sd) {
     }
     printf("DEBUG: nombre recibido: '%s'\n", nombre);
 
-    // recv espera un int
     if (recv(cliente_sd, &puerto, sizeof(puerto), 0) <= 0) {
         perror("Error leyendo el puerto del usuario");
         return NULL;

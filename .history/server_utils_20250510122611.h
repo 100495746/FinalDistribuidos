@@ -33,7 +33,7 @@ void *list_content(int cliente_sd);
 void *get_file(int cliente_sd);
 void *disconnect_user(int cliente_sd);
 void *unregister_user(int cliente_sd);
-void *delete_file(int cliente_sd);
+void *delete_user(int cliente_sd);
 
 int sendMessage(int fd, const char *msg);
 int readLine(int fd, void *buffer, size_t n);

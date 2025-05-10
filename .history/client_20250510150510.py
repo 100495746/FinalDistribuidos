@@ -157,7 +157,6 @@ class client :
             if client._current_user is None:
                 print("Error: no user connected.")
                 return client.RC.USER_ERROR
-            
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((client._server, client._port))
                 s.sendall(b'UNREGISTER\x00')
@@ -172,6 +171,12 @@ class client :
         except Exception as e:
             print("UNREGISTER Exception:", str(e))
             return client.RC.ERROR
+
+
+
+
+
+
     
 
     @staticmethod
@@ -187,9 +192,7 @@ class client :
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
-                # recibe hasta 4 bytes y los almacena en response
                 response = s.recv(4)
-                #traducimos de bytes a int
                 result = int.from_bytes(response, byteorder='little', signed=True)
                 print("DISCONNECT → Resultado:", result)
                 return client.RC.OK if result == 0 else client.RC.USER_ERROR
@@ -198,17 +201,17 @@ class client :
             return client.RC.ERROR
 
 
+
     @staticmethod
     def publish(fileName, description):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((client._server, client._port))
                 s.sendall(b'PUBLISH\x00')
-                s.sendall(client._current_user.encode() + b'\x00')  # sustituir por el usuario si gestionas sesión (lo hago luego)
+                s.sendall(b'raul\x00')  # sustituir por el usuario si gestionas sesión
                 abs_path = os.path.abspath(fileName)
                 s.sendall(abs_path.encode() + b'\x00')
                 s.sendall(description.encode() + b'\x00')
-
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
@@ -284,13 +287,11 @@ class client :
                 s.sendall(fecha.encode() + b'\x00')              
 
                 print("LIST_CONTENT →")
-                #Imprime los archivos asociados al cliente
                 while True:
                     line = client.readString(s)
                     if line == "\n":
                         break
                     print("  " + line.strip())
-
                 return client.RC.OK
         except Exception as e:
             print("LIST_CONTENT Exception:", str(e))

@@ -284,13 +284,12 @@ class client :
                 s.sendall(fecha.encode() + b'\x00')              
 
                 print("LIST_CONTENT →")
-                #Imprime los archivos asociados al cliente
                 while True:
                     line = client.readString(s)
                     if line == "\n":
                         break
                     print("  " + line.strip())
-
+                    
                 return client.RC.OK
         except Exception as e:
             print("LIST_CONTENT Exception:", str(e))

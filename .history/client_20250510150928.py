@@ -284,7 +284,7 @@ class client :
                 s.sendall(fecha.encode() + b'\x00')              
 
                 print("LIST_CONTENT →")
-                #Imprime los archivos asociados al cliente
+                #Imprime los 
                 while True:
                     line = client.readString(s)
                     if line == "\n":
