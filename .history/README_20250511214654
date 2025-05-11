@@ -1,0 +1,61 @@
+# Instrucciones para Ejecutar el Proyecto
+
+## Terminal 1 — Servidor Flask (fecha y hora)
+
+Ejecuta el servidor web Flask que devuelve la hora actual:
+
+```bash
+cd FinalDistribuidos
+python3 flask_datetime_server.py
+```
+
+Debe mostrar algo como:
+
+```
+Running on http://127.0.0.1:5052
+```
+
+##  Terminal 2 — Servidor TCP del Proyecto
+
+Compila y ejecuta el servidor principal que atiende a los clientes:
+
+```bash
+cd FinalDistribuidos
+make clean
+make
+./servidor -p (numero de PUERTO)
+```
+
+Debe mostrar:
+
+```
+s> init server 0.0.0.0:5051
+```
+
+## 🔧 Terminal 3 — Cliente Interactivo
+
+Ejecuta el cliente en modo interactivo:
+
+```bash
+cd FinalDistribuidos
+python3 client.py -s 127.0.0.1 -p 5051
+```
+
+Una vez dentro del cliente (prompt `c>`), puedes usar comandos como:
+
+```
+REGISTER raul
+CONNECT raul
+PUBLISH /ruta/absoluta/ejemplo.txt "una descripción"
+LIST_USERS
+LIST_CONTENT
+GET_FILE raul /ruta/absoluta/ejemplo.txt copia.txt
+DELETE /ruta/absoluta/ejemplo.txt
+DISCONNECT
+UNREGISTER
+```
+
+### 📌 Importante
+
+- Asegúrate de usar rutas absolutas en los comandos que usan ficheros.
+- Ejecuta los pasos en este orden para evitar errores de conexión o dependencias.

@@ -69,6 +69,6 @@ QUIT
 ## Notas
 
 - Usamos siempre rutas absolutas para los ficheros.
-- Se pueden ejecutar varios clientes simultáneamente, cada uno en una terminal.
+- Puedes ejecutar varios clientes simultáneamente, cada uno en una terminal.
 - El servidor TCP debe estar activo antes de lanzar cualquier cliente.
 - El servidor Flask debe estar en marcha para que los clientes funcionen correctamente.
