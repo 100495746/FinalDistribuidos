@@ -360,21 +360,11 @@ void *get_file(int cliente_sd) {
     }
 
     Usuario *u = buscar_usuario(nombre);
-    uint8_t resultado;
-    if (!u) {
-        resultado = 1;  // usuario no existe
-        send(cliente_sd, &resultado, 1, 0);
+    if (!u || !u->conectado) {
+        int err = -1;
+        send(cliente_sd, &err, sizeof(err), 0);
         return NULL;
     }
-    if (!u->conectado) {
-        resultado = 2;  // no está conectado
-        send(cliente_sd, &resultado, 1, 0);
-        return NULL;
-    }
-    
-    // OK
-    resultado = 0;
-    send(cliente_sd, &resultado, 1, 0);
 
     // Aquí el cliente C debe iniciar la conexión con el otro cliente usando u->ip y u->puerto.
     // Solo se devuelve 0 si todo está bien y el servidor se lo permite.
@@ -426,8 +416,8 @@ void *unregister_user(int cliente_sd) {
         return NULL;
     }
     log_operation("UNREGISTER", nombre);
+    int pos = -1; // que empiece en una no real 
 
-    int pos = -1;
     for (int i = 0; i < num_usuarios; i++) {
         if (strcmp(usuarios[i].nombre, nombre) == 0) {
             pos = i;
@@ -435,36 +425,20 @@ void *unregister_user(int cliente_sd) {
         }
     }
 
-    if (pos == -1) {
-        resultado = 1;  // USER DOES NOT EXIST
+    if (pos == -1){
+        resultado = 1;
         send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
 
-    // Liberar memoria de los ficheros del usuario
     free(usuarios[pos].ficheros);
-
-    // Si no es el último usuario, mover el último a su lugar
-    if (pos != num_usuarios - 1) {
+    if (pos != num_usuarios - 1){
         usuarios[pos] = usuarios[num_usuarios - 1];
     }
-
     num_usuarios--;
-
-    // Si no quedan usuarios, liberar todo
-    if (num_usuarios == 0) {
-        free(usuarios);
-        usuarios = NULL;
-    } else {
-        Usuario *tmp = realloc(usuarios, num_usuarios * sizeof(Usuario));
-        if (tmp != NULL) {
-            usuarios = tmp;
-        }
-    }
-
     resultado = 0;
     send(cliente_sd, &resultado, 1, 0);
-    return NULL;
+    return NULL;   
 }
 
 

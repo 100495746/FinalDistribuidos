@@ -110,8 +110,7 @@ class client :
                 try:
                     listener.bind(('', port))
                 except OSError as e:
-                    if e.errno == 48:  # Address already in use
-                        return  # Silencia el error y detiene el hilo
+                    
                 listener.listen(1)
                 print(f"CLIENT FILE SERVER LISTENING on port {port}...")
                 while True:
@@ -120,7 +119,6 @@ class client :
                     try:
                         cmd = client.readString(conn)
                         if cmd != "GET_FILE":
-                            #?? ignorar
                             conn.close()
                             continue
                         remote_path = client.readString(conn)

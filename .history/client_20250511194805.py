@@ -120,7 +120,7 @@ class client :
                     try:
                         cmd = client.readString(conn)
                         if cmd != "GET_FILE":
-                            #?? ignorar
+                            
                             conn.close()
                             continue
                         remote_path = client.readString(conn)
