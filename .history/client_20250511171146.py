@@ -514,14 +514,15 @@ class client :
 
     @staticmethod
     def getfile(user, remote_FileName, local_FileName):
-        import os
+        import os  # Asegúrate de que esté importado arriba si no lo está
         base_port = 4500
         port = base_port + (sum(ord(c) for c in user) % 1000)
         try:
+            # Convertir a rutas absolutas
             remote_FileName = os.path.abspath(remote_FileName)
             local_FileName = os.path.abspath(local_FileName)
 
-            # Paso 1: Solicitar permiso al servidor central
+            # 1. Solicitar permiso al servidor central
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((client._server, client._port))
                 s.sendall(b'GET_FILE\x00')
@@ -531,62 +532,42 @@ class client :
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
-                response = b''
-                while len(response) < 4:
-                    chunk = s.recv(4 - len(response))
-                    if not chunk:
-                        break
-                    response += chunk
-                if len(response) != 4:
-                    print("c> GET_FILE FAIL")
-                    return client.RC.ERROR
+                response = s.recv(4)
                 result = int.from_bytes(response, byteorder='little', signed=True)
                 if result != 0:
-                    print("c> GET_FILE FAIL")
+                    print("GET_FILE → Server denied or user unavailable.")
                     return client.RC.USER_ERROR
 
-            # Paso 2: Conectarse al cliente remoto para pedir el fichero
-            ip = '127.0.0.1'
+            # 2. Conectarse al cliente remoto para pedir el fichero
+            ip = '127.0.0.1'  # Hardcoded por ahora
+
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as peer:
                 peer.connect((ip, port))
                 peer.sendall(b'GET_FILE\x00')
                 peer.sendall(remote_FileName.encode() + b'\x00')
                 peer.sendall(local_FileName.encode() + b'\x00')
+                
 
                 status = peer.recv(1)
                 if status == b'\x00':
-                    size_str = client.readString(peer)
-                    try:
-                        size = int(size_str)
-                    except Exception:
-                        print("c> GET_FILE FAIL")
-                        return client.RC.ERROR
-                    content = b''
-                    while len(content) < size:
-                        chunk = peer.recv(size - len(content))
-                        if not chunk:
-                            break
-                        content += chunk
-                    if len(content) != size:
-                        print("c> GET_FILE FAIL")
-                        return client.RC.ERROR
+                    size = client.readString(peer)
+                    content = peer.recv(int(size))
                     with open(local_FileName, "wb") as f:
                         f.write(content)
+                    #print("GET_FILE → Fichero recibido correctamente.")
                     print("c> GET_FILE OK")
                     return client.RC.OK
                 elif status == b'\x01':
-                    print("c> GET_FILE FAIL , FILE NOT EXIST")
+                    #print("GET_FILE → El fichero no existe.")
+                    print("c> ERROR: FILE NOT FOUND")
                     return client.RC.USER_ERROR
                 else:
-                    print("c> GET_FILE FAIL")
+                    #print("GET_FILE → Error en el cliente remoto.")
+                    print("c> ERROR: REMOTE ERROR")
                     return client.RC.ERROR
-        except Exception:
-            print("c> GET_FILE FAIL")
-            try:
-                if os.path.exists(local_FileName):
-                    os.remove(local_FileName)
-            except:
-                pass
+
+        except Exception as e:
+            print("GET_FILE Exception:", str(e))
             return client.RC.ERROR
 
 

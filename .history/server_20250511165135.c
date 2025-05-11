@@ -477,7 +477,7 @@ void *delete_file(int cliente_sd) {
         }
     }
 
-    if (pos == -1){
+    if (pos = -1){
         resultado = 3;
         send(cliente_sd, &resultado, 1, 0);
         return NULL;

@@ -82,7 +82,7 @@ void *handle_client(void *arg) {
         return NULL;
     }
 
-    log_operation(comando, cliente_sd);
+    log_operation(comando, &cliente_sd);
 
     // según que hayamos escrito en la terminal...
     if (strcmp(comando, "REGISTER") == 0) {
