@@ -401,7 +401,7 @@ void *disconnect_user(int cliente_sd) {
     if (!u) {
         resultado = 1;
         send(cliente_sd, &resultado, 1, 0);
-        return NULL;
+        return
     }
     if (!u->conectado){
         resultado = 2;
