@@ -714,7 +714,7 @@ class client :
                         print("Error: command " + line[0] + " not valid.")
 
             except Exception as e:
-                return client.RC.ERROR
+
                 #print("Exception: " + str(e))
 
 

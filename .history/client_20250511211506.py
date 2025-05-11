@@ -137,7 +137,7 @@ class client :
                         except:
                             conn.sendall(b'\x02')
                     except Exception as e:
-                        print("Error during GET_FILE handling:", str(e))
+                        #print("Error during GET_FILE handling:", str(e))
                     conn.close()
             threading.Thread(target=file_server_thread, daemon=True).start()
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -714,8 +714,8 @@ class client :
                         print("Error: command " + line[0] + " not valid.")
 
             except Exception as e:
-                return client.RC.ERROR
-                #print("Exception: " + str(e))
+
+                print("Exception: " + str(e))
 
 
 

@@ -116,7 +116,7 @@ class client :
                 #print(f"CLIENT FILE SERVER LISTENING on port {port}...")
                 while True:
                     conn, addr = listener.accept()
-                    #print("Connection received from:", addr)
+                    print("Connection received from:", addr)
                     try:
                         cmd = client.readString(conn)
                         if cmd != "GET_FILE":
@@ -125,7 +125,7 @@ class client :
                             continue
                         remote_path = client.readString(conn)
                         local_name = client.readString(conn)
-                        #print(f"GET_FILE request: path={remote_path}, dest={local_name}")
+                        print(f"GET_FILE request: path={remote_path}, dest={local_name}")
                         try:
                             with open(remote_path, "rb") as f:
                                 content = f.read()
@@ -714,8 +714,8 @@ class client :
                         print("Error: command " + line[0] + " not valid.")
 
             except Exception as e:
-                return client.RC.ERROR
-                #print("Exception: " + str(e))
+
+                print("Exception: " + str(e))
 
 
 
