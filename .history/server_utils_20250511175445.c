@@ -10,7 +10,7 @@ int capacidad_usuarios = 0;
 
 //struct Usuario *usrpt = (Usuario *)malloc(sizeof(Usuario));
 
-uint8_t registrar_usuario(const char *nombre) {
+int registrar_usuario(const char *nombre) {
     // Comprobar si ya existe el usuario
     if(existe_usuario(nombre)==1){
         return 1;
@@ -78,3 +78,4 @@ int sendMessage(int fd, const char *msg) {
     size_t len = strlen(msg) + 1;
     return send(fd, msg, len, 0);
 }
+
