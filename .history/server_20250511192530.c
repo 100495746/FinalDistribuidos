@@ -425,7 +425,7 @@ void *unregister_user(int cliente_sd) {
         }
     }
 
-    if (pos == -1){
+    if ((pos == -1){
         resultado = 1;
         send(cliente_sd, &resultado, 1, 0);
         return NULL;

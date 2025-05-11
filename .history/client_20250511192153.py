@@ -330,8 +330,8 @@ class client :
         """
         try:
             if client._current_user is None:
-                print("c> LIST_USERS FAIL , USER NOT CONNECTED")
-                return client.RC.USER_ERROR
+    print("c> LIST_USERS FAIL , USER NOT CONNECTED")
+    return client.RC.USER_ERROR
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((client._server, client._port))
                 s.sendall(b'LIST_USERS\x00')

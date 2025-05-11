@@ -329,13 +329,9 @@ class client :
         - Si OK, recibe el número de usuarios y por cada uno: nombre, ip, puerto.
         """
         try:
-            if client._current_user is None:
-                print("c> LIST_USERS FAIL , USER NOT CONNECTED")
-                return client.RC.USER_ERROR
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((client._server, client._port))
                 s.sendall(b'LIST_USERS\x00')
-                s.sendall(client._current_user.encode() + b'\x00')
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
