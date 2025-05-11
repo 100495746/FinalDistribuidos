@@ -1,7 +1,10 @@
 #include "server_utils.h"
 
+
 extern Usuario *usuarios;
 extern int num_usuarios;
+
+pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 
@@ -28,9 +31,8 @@ int main(int argc, char *argv[]) {
     listen(sd,10); // "encendemos" el socket para recibir conexiones externas, ponemos 10 como maximo de cola
     char ip_local[16]; //len = 16 para IPv4
     obtener_ip_local(ip_local, sizeof(ip_local)); //obtenemos la ip local
-    printf("s> %s:%d\n", ip_local, puerto); // mensaje de inicio
+    printf("s> init server %s:%d\ns> ", ip_local, puerto); // mensaje de inicio
     fflush(stdout);
-    printf("s>");
 
     while (1) {
         struct sockaddr_in cliente;
@@ -80,7 +82,7 @@ void *handle_client(void *arg) {
         return NULL;
     }
 
-    // printf("DEBUG: recibido comando '%s'\n", comando);
+    log_operation(comando, cliente_sd);
 
     // según que hayamos escrito en la terminal...
     if (strcmp(comando, "REGISTER") == 0) {
@@ -113,25 +115,16 @@ void *handle_client(void *arg) {
 
 void *register_client(int cliente_sd) {
     char nombre[256];
+    uint8_t resultado = 2;
     // printf("DEBUG: esperando nombre del usuario...\n");
     if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1) {
         perror("Error leyendo el nombre del usuario");
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
     // printf("DEBUG: nombre recibido: '%s'\n", nombre);
-    int resultado = registrar_usuario(nombre);
-    send(cliente_sd, &resultado, sizeof(resultado), 0);
-
-    // Mensajes comentados según el protocolo del enunciado:
-    // if (resultado == 0) {
-    //     sendMessage(cliente_sd, "Usuario registrado");
-    //     sendMessage(cliente_sd, "Comando procesado correctamente");
-    // } else if (resultado == 1) {
-    //     sendMessage(cliente_sd, "ERROR: Usuario ya registrado");
-    // } else {
-    //     sendMessage(cliente_sd, "ERROR: No se pudo registrar el usuario");
-    // }
-
+    resultado = registrar_usuario(nombre);
+    send(cliente_sd, &resultado, 1, 0);
     return NULL;
 }
 
@@ -139,37 +132,52 @@ void *publish(int cliente_sd) {
     char nombre[256];
     char path[256];
     char descripcion[256];
-    int resultado;
+    uint8_t resultado = 4;
 
     // printf("DEBUG: esperando nombre del usuario...\n");
 
     if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1) {
         perror("Error leyendo el nombre del usuario");
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
 
     Usuario *u = buscar_usuario(nombre);
+    // comprobando si existe
     if (u == NULL) {
         resultado = 1;
-        send(cliente_sd, &resultado, sizeof(resultado), 0);
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
-
+    // comprobando si esta conectado
+    if (!u->conectado){
+        resultado = 2;
+        send(cliente_sd, &resultado, 1, 0);
+    }
     if (readLine(cliente_sd, path, sizeof(path)) < 1) {
         perror("Error leyendo el path");
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
 
     if (readLine(cliente_sd, descripcion, sizeof(descripcion)) < 1) {
         perror("Error leyendo la descripción");
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
 
+    //comprobamos si ya fue publicado antes
+    for(int i = 0; i < u->num_ficheros; i++){
+        if (strcmp(u->ficheros[i].path, path) == 0){
+            resultado = 3;
+            send(cliente_sd, &resultado, 1, 0);
+            return NULL;
+        }
+    }
     // creamos el nuevo fichero
     File *nuevo = malloc((u->num_ficheros + 1) * sizeof(File));
     if (nuevo == NULL) {
-        resultado = 2;
-        send(cliente_sd, &resultado, sizeof(resultado), 0);
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
 
@@ -185,7 +193,7 @@ void *publish(int cliente_sd) {
     //     u->ficheros[u->num_ficheros - 1].descripcion);
 
     resultado = 0;
-    send(cliente_sd, &resultado, sizeof(resultado), 0); // seguimos usando send() para enteros
+    send(cliente_sd, &resultado, 1, 0); 
     return NULL;
 }
 /*
@@ -199,11 +207,12 @@ void *publish(int cliente_sd) {
 void *connect_user(int cliente_sd) {
     char nombre[256];
     int puerto;
-    int resultado;
+    uint8_t resultado = 3;
 
     // printf("DEBUG: esperando nombre del usuario...\n");
     if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1) {
         perror("Error leyendo el nombre del usuario");
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
     // printf("DEBUG: nombre recibido: '%s'\n", nombre);
@@ -211,6 +220,7 @@ void *connect_user(int cliente_sd) {
     // recv espera un int
     if (recv(cliente_sd, &puerto, sizeof(puerto), 0) <= 0) {
         perror("Error leyendo el puerto del usuario");
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
     // printf("DEBUG: puerto recibido: %d\n", puerto);
@@ -219,16 +229,21 @@ void *connect_user(int cliente_sd) {
     char ip_cliente[64];
     if (readLine(cliente_sd, ip_cliente, sizeof(ip_cliente)) < 1) {
         perror("Error leyendo IP del cliente");
-        resultado = -3;
-        send(cliente_sd, &resultado, sizeof(resultado), 0);
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
 
     Usuario *u = buscar_usuario(nombre);
+    // comprobamos si existe 
     if (u == NULL) {
-        resultado = -1;
-        send(cliente_sd, &resultado, sizeof(resultado), 0);
+        resultado = 1;
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
+    }
+    // comprobamos si esta conectado
+    if (u->conectado){
+        resultado = 2;
+        send(cliente_sd, &resultado, 1, 0);
     }
 
     strncpy(u->ip, ip_cliente, sizeof(u->ip));
@@ -237,66 +252,105 @@ void *connect_user(int cliente_sd) {
     u->conectado = 1;
 
     resultado = 0;
-    send(cliente_sd, &resultado, sizeof(resultado), 0);
+    send(cliente_sd, &resultado, 1, 0);
     return NULL;
 }
 
 
 void *list_users(int cliente_sd) {
+    char nombre[256];
+    uint8_t resultado = 4;
     char linea[512];
-    for (int i = 0; i < num_usuarios; i++) {
-        if (usuarios[i].conectado) {
-            snprintf(linea, sizeof(linea), "%s %s %d\n",
-                     usuarios[i].nombre,
-                     usuarios[i].ip,
-                     usuarios[i].puerto);
-            // sendMessage(cliente_sd, linea); // Comentado, no requerido por el protocolo
-        }
-    }
-    // Enviar línea vacía para marcar el final
-    // sendMessage(cliente_sd, "\n"); // Comentado, no requerido por el protocolo
-    return NULL;
-}
-/*
-typedef struct {
-    char path[256];
-    char descripcion[256];
-} File; //fichero publicado
-
-typedef struct {
-    char nombre[256];
-    int conectado;
-    char ip[64];
-    int puerto;
-    File *ficheros;
-    int num_ficheros;
-} Usuario; //user registrado
-*/
-
-// Devuelve la lista de ficheros publicados por un usuario conectado
-void *list_content(int cliente_sd) {
-    char nombre[256];
-    if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1) {
+    if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1 ){
+        send(cliente_sd, &resultado, 1, 0);
         perror("Error leyendo nombre en LIST_CONTENT");
         return NULL;
     }
 
     Usuario *u = buscar_usuario(nombre);
-    if (!u || !u->conectado) {
-        // sendMessage(cliente_sd, "\n"); // Comentado, no requerido por el protocolo
+    // comprbamos si quien pregunta existe
+    if (!u ){
+        resultado = 1;
+        send(cliente_sd, &resultado, 1, 0);
+        return NULL;
+    }
+    // comprobamos si quien pregunta esta conectado 
+    if(!u->conectado) {
+        resultado = 2;
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
 
-    for (int i = 0; i < u->num_ficheros; i++) {
-        char linea[512];
-        snprintf(linea, sizeof(linea), "%s %s\n", u->ficheros[i].path, u->ficheros[i].descripcion);
-        // sendMessage(cliente_sd, linea); // Comentado, no requerido por el protocolo
+    int n = 0;
+    for(int i = 0; i < num_usuarios; i++){
+        if (usuarios[i].conectado) { n++; }
     }
-    // sendMessage(cliente_sd, "\n"); // Comentado, no requerido por el protocolo
+
+    resultado = 0;
+    send(cliente_sd, &resultado, 1, 0);
+    char n_clientes;
+    snprintf(n_clientes, sizeof(n_clientes), "%d", n);
+    sendMessage(cliente_sd, n_clientes);
+
+    for (int i = 0; i < num_usuarios; i++) {
+        if (usuarios[i].conectado) {
+            //nombre
+            sendMessage(cliente_sd, usuarios[i].nombre);
+            // direccion IP
+            sendMessage(cliente_sd, usuarios[i].ip);
+            // puerto
+            char puerto_ascii[12];
+            snprintf(puerto_ascii, sizeof(puerto_ascii), "%d", usuarios[i].puerto);
+            sendMessage(cliente_sd, puerto_ascii);
+        }
+    }
     return NULL;
 }
 
-// Prepara el reenvío de un fichero (estructura base)
+// Devuelve la lista de ficheros publicados por un usuario conectado
+void *list_content(int cliente_sd) {
+    char nombre[256]; // quien pregunta
+    char remoto[256]; // de quien se pregunta
+    uint8_t resultado = 4;
+    if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1 || readLine(cliente_sd, remoto, sizeof(remoto)) < 1) {
+        send(cliente_sd, &resultado, 1, 0);
+        perror("Error leyendo nombre en LIST_CONTENT");
+        return NULL;
+    }
+
+    Usuario *u = buscar_usuario(nombre);
+    // comprbamos si quien pregunta existe
+    if (!u ){
+        resultado = 1;
+        send(cliente_sd, &resultado, 1, 0);
+        return NULL;
+    }
+    // comprobamos si quien pregunta esta conectado 
+    if(!u->conectado) {
+        resultado = 2;
+        send(cliente_sd, &resultado, 1, 0);
+        return NULL;
+    }
+    Usuario *r = buscar_usuario(remoto);
+    // comprbamos si de quien pregunta existe
+    if (!r ){
+        resultado = 3;
+        send(cliente_sd, &resultado, 1, 0);
+        return NULL;
+    }
+    resultado = 0;
+    send(cliente_sd, &resultado, 1, 0);
+
+    char n_fich[512];
+    snprintf(n_fich, sizeof(n_fich), "%d", r->num_ficheros);
+    sendMessage(cliente_sd, n_fich);
+    
+    for (int i = 0; i < r->num_ficheros; i++) {
+        sendMessage(cliente_sd, r->ficheros[i].path); // Comentado, no requerido por el protocolo
+    }
+    return NULL;
+}
+// ESTA CREO QUE ES ENTRE CLIENTES ASI QUE NO DEBERIA ESTAR AQUI
 void *get_file(int cliente_sd) {
     char nombre[256], fichero[256], local[256];
 
@@ -321,84 +375,132 @@ void *get_file(int cliente_sd) {
     return NULL;
 }
 
+
+// Prepara el reenvío de un fichero (estructura base)
+
+
 // Marca al usuario como desconectado
 void *disconnect_user(int cliente_sd) {
     char nombre[256];
+    uint8_t resultado = 3;
     if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1) {
         perror("Error leyendo nombre en DISCONNECT");
-        return NULL;
-    }
-
-    Usuario *u = buscar_usuario(nombre);
-    if (u) {
-        u->conectado = 0;
-        u->ip[0] = '\0';
-        u->puerto = -1;
-    }
-
-    int ok = 0;
-    send(cliente_sd, &ok, sizeof(ok), 0);
-    return NULL;
-}
-
-// Elimina al usuario completamente del sistema
-void *unregister_user(int cliente_sd) {
-    char nombre[256];
-    if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1) {
-        perror("Error leyendo nombre en UNREGISTER");
-        return NULL;
-    }
-
-    for (int i = 0; i < num_usuarios; i++) {
-        if (strcmp(usuarios[i].nombre, nombre) == 0) {
-            free(usuarios[i].ficheros);
-            for (int j = i; j < num_usuarios - 1; j++) {
-                usuarios[j] = usuarios[j + 1];
-            }
-            num_usuarios--;
-            int ok = 0;
-            send(cliente_sd, &ok, sizeof(ok), 0);
-            return NULL;
-        }
-    }
-
-    int error = -1;
-    send(cliente_sd, &error, sizeof(error), 0);
-    return NULL;
-}
-
-// Elimina un fichero publicado por un usuario
-void *delete_file(int cliente_sd) {
-    char nombre[256];
-    char path[256];
-
-    if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1 ||
-        readLine(cliente_sd, path, sizeof(path)) < 1) {
-        perror("Error leyendo datos en DELETE");
+        send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
 
     Usuario *u = buscar_usuario(nombre);
     if (!u) {
-        int err = -1;
-        send(cliente_sd, &err, sizeof(err), 0);
-        return NULL;
+        resultado = 1;
+        send(cliente_sd, &resultado, 1, 0);
+    }
+    if (!u->conectado){
+        resultado = 2;
+        send(cliente_sd, &resultado, 1, 0);
     }
 
-    int found = 0;
-    for (int i = 0; i < u->num_ficheros; i++) {
-        if (strcmp(u->ficheros[i].path, path) == 0) {
-            for (int j = i; j < u->num_ficheros - 1; j++) {
-                u->ficheros[j] = u->ficheros[j + 1];
-            }
-            u->num_ficheros--;
-            found = 1;
+    u->conectado = 0;
+    u->ip[0] = '\0';
+    u->puerto = -1;
+    
+    resultado = 0;
+    send(cliente_sd, &resultado, 1, 0);
+    return NULL;
+}
+
+// Elimina al usuario completamente del sistema
+void *unregister_user(int cliente_sd) {
+    uint8_t resultado = 2;
+    char nombre[256];
+    if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1) {
+        perror("Error leyendo nombre en UNREGISTER");
+        send(cliente_sd, &resultado, 1, 0);
+        return NULL;
+    }
+    int pos = -1; // que empiece en una no real 
+
+    for (int i = 0; i < num_usuarios; i++) {
+        if (strcmp(usuarios[i].nombre, nombre) == 0) {
+            pos = i;
             break;
         }
     }
 
-    int result = found ? 0 : -1;
-    send(cliente_sd, &result, sizeof(result), 0);
+    if (pos = -1){
+        resultado = 1;
+        send(cliente_sd, &resultado, 1, 0);
+        return NULL;
+    }
+
+    free(usuarios[pos].ficheros);
+    if (pos != num_usuarios - 1){
+        usuarios[pos] = usuarios[num_usuarios - 1];
+    }
+    num_usuarios--;
+    resultado = 0;
+    send(cliente_sd, &resultado, 1, 0);
+    return NULL;   
+}
+
+
+// Elimina un fichero publicado por un usuario
+void *delete_file(int cliente_sd) {
+    char nombre[256];
+    char path[256];
+    uint8_t resultado = 4;
+
+
+    if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1 ||
+        readLine(cliente_sd, path, sizeof(path)) < 1) {
+        perror("Error leyendo datos en DELETE");
+        send(cliente_sd, &resultado, 1, 0);
+        return NULL;
+    }
+
+    Usuario *u = buscar_usuario(nombre);
+    if (!u) {
+        int resultado = 1;
+        send(cliente_sd, &resultado, 1, 0);
+        return NULL;
+    }
+
+    if (!u->conectado) {
+        int resultado = 2;
+        send(cliente_sd, &resultado, 1, 0);
+        return NULL;
+    }
+    int pos = -1;
+    for (int i = 0; i < u->num_ficheros; i++) {
+        if (strcmp(u->ficheros[i].path, path) == 0) {
+            pos = i;
+            break;
+        }
+    }
+
+    if (pos = -1){
+        resultado = 3;
+        send(cliente_sd, &resultado, 1, 0);
+        return NULL;
+    }
+
+
+    if (pos != u->num_ficheros - 1){
+        u->ficheros[pos] = u->ficheros[u->num_ficheros - 1 ];
+    }
+    u->num_ficheros--;
+
+    if (u->num_ficheros == 0){
+        free(u->ficheros);
+        u->ficheros = NULL;
+    } else {
+        File *tmp = realloc(u->ficheros, u->num_ficheros * sizeof(File));
+        if (tmp){
+            u->ficheros = tmp;
+        }
+    }
+
+    resultado = 0;
+    send(cliente_sd, &resultado, 1, 0);
     return NULL;
 }
 
@@ -412,10 +514,22 @@ void obtener_ip_local(char *ip_local, size_t size) {
 
     for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
         if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
-            inet_ntop(AF_INET, &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr, ip_local, size);
-            break;
+            // Verificar que la interfaz esté activa (UP) y no sea loopback
+            if ((ifa->ifa_flags & IFF_UP) && !(ifa->ifa_flags & IFF_LOOPBACK)) {
+                inet_ntop(AF_INET, &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr, ip_local, size);
+                break;
+            }
         }
     }
 
     freeifaddrs(ifaddr);
+}
+// impresion del log al utilizar print hay que tener cuidado por lo que usamos un mutex
+
+void log_operation(const char *op, const char *user){
+
+    pthread_mutex_lock(&log_mutex);
+    printf("s> OPERATION %s FROM %s\ns> ", op, user);
+    fflush(stdout);
+    pthread_mutex_unlock(&log_mutex);
 }

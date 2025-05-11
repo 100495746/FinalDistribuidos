@@ -1,16 +1,18 @@
 #ifndef SERVER_UTILS_H
 #define SERVER_UTILS_H
+#define _GNU_SOURCE   // sin esta cabecera parece ser que no lee las variables "IFF_" que se encuentran en net_if.h
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ifaddrs.h>
-
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
 #include <arpa/inet.h>  // Para inet_ntop()
+#include <net/if.h>                          
+#include <ifaddrs.h>
+
 
 
 
@@ -31,6 +33,9 @@ typedef struct {
 
 // funcion para obtener la ip_local
 void obtener_ip_local(char *ip_local, size_t size);
+
+// funcion para los logs de cada usuario en el servidor
+void log_operation(const char *operation, const char *user);
 
 //  prototipos
 int registrar_usuario(const char *nombre);
