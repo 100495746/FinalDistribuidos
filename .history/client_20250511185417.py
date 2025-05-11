@@ -182,7 +182,7 @@ class client :
         - Envía UNREGISTER\0
         - Envía user\0
         - Envía fecha\0
-        - Espera un entero de 1 byte (0=OK, 1=USER DOES NOT EXIST, otro=FAIL)
+        - Espera un entero de 4 bytes little endian (0=OK, 1=USER DOES NOT EXIST, otro=FAIL)
         - Imprime el mensaje correspondiente y retorna el código adecuado.
         """
         try:
@@ -193,11 +193,16 @@ class client :
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
-                result = s.recv(1)
-                if not result or len(result) != 1:
+                data = b''
+                while len(data) < 4:
+                    chunk = s.recv(4 - len(data))
+                    if not chunk:
+                        break
+                    data += chunk
+                if len(data) != 4:
                     print("c> UNREGISTER FAIL")
                     return client.RC.ERROR
-                result = result[0]
+                result = int.from_bytes(data, byteorder='little', signed=True)
                 if result == 0:
                     print("c> UNREGISTER OK")
                     return client.RC.OK
@@ -219,7 +224,7 @@ class client :
         - Envía DISCONNECT\0
         - Envía user\0
         - Envía fecha\0
-        - Espera un entero de 1 byte:
+        - Espera un entero de 4 bytes little endian:
             0 = OK
             1 = USER DOES NOT EXIST
             2 = USER NOT CONNECTED
@@ -237,11 +242,16 @@ class client :
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
-                result = s.recv(1)
-                if not result or len(result) != 1:
+                data = b''
+                while len(data) < 4:
+                    chunk = s.recv(4 - len(data))
+                    if not chunk:
+                        break
+                    data += chunk
+                if len(data) != 4:
                     print("c> DISCONNECT FAIL")
                     return client.RC.ERROR
-                result = result[0]
+                result = int.from_bytes(data, byteorder='little', signed=True)
                 if result == 0:
                     print("c> DISCONNECT OK")
                     client._current_user = None
@@ -267,7 +277,7 @@ class client :
         - Envía ruta absoluta del fichero\0
         - Envía descripción\0
         - Envía fecha/hora\0
-        - Espera un entero de 1 byte con los siguientes significados:
+        - Espera un entero de 4 bytes little endian con los siguientes significados:
             0 = OK
             1 = USER DOES NOT EXIST
             2 = USER NOT CONNECTED
@@ -288,11 +298,16 @@ class client :
                 s.sendall(description.encode() + b'\x00')
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
-                result = s.recv(1)
-                if not result or len(result) != 1:
+                response = b''
+                while len(response) < 4:
+                    chunk = s.recv(4 - len(response))
+                    if not chunk:
+                        break
+                    response += chunk
+                if len(response) != 4:
                     print("c> PUBLISH FAIL")
                     return client.RC.ERROR
-                result = result[0]
+                result = int.from_bytes(response, byteorder='little', signed=True)
                 if result == 0:
                     print("c> PUBLISH OK")
                     return client.RC.OK
@@ -321,7 +336,7 @@ class client :
         Implementa la consulta de usuarios conforme al apartado 4.4.3:
         - Envía LIST_USERS\0
         - Envía fecha\0
-        - Espera un entero de 1 byte:
+        - Espera un entero de 4 bytes little endian:
             0 = OK
             1 = USER DOES NOT EXIST
             2 = USER NOT CONNECTED
@@ -335,11 +350,10 @@ class client :
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
-                result = s.recv(1)
-                if not result or len(result) != 1:
+                
                     print("c> LIST_USERS FAIL")
                     return client.RC.ERROR
-                result = result[0]
+                result = int.from_bytes(data, byteorder='little', signed=True)
 
                 if result == 0:
                     print("c> LIST_USERS OK")
@@ -377,7 +391,7 @@ class client :
         - Envía usuario\0
         - Envía ruta absoluta del fichero\0
         - Envía fecha/hora\0
-        - Espera un entero de 1 byte con los siguientes significados:
+        - Espera un entero de 4 bytes little endian con los siguientes significados:
             0 = OK
             1 = USER DOES NOT EXIST
             2 = USER NOT CONNECTED
@@ -398,12 +412,18 @@ class client :
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
-                result = s.recv(1)
-                if not result or len(result) != 1:
+                data = b''
+                while len(data) < 4:
+                    chunk = s.recv(4 - len(data))
+                    if not chunk:
+                        break
+                    data += chunk
+
+                if len(data) != 4:
                     print("c> DELETE FAIL")
                     return client.RC.ERROR
 
-                result = result[0]
+                result = int.from_bytes(data, byteorder='little', signed=True)
                 if result == 0:
                     print("c> DELETE OK")
                     return client.RC.OK
@@ -439,12 +459,17 @@ class client :
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
-                # Recibir respuesta (1 byte)
-                result = s.recv(1)
-                if not result or len(result) != 1:
+                # Recibir respuesta (4 bytes)
+                data = b''
+                while len(data) < 4:
+                    chunk = s.recv(4 - len(data))
+                    if not chunk:
+                        break
+                    data += chunk
+                if len(data) != 4:
                     print("c> LIST_CONTENT FAIL")
                     return client.RC.ERROR
-                result = result[0]
+                result = int.from_bytes(data, byteorder='little', signed=True)
 
                 if result == 0:
                     print("c> LIST_CONTENT OK")
@@ -491,11 +516,16 @@ class client :
                 fecha = client.get_datetime()
                 s.sendall(fecha.encode() + b'\x00')
 
-                result = s.recv(1)
-                if not result or len(result) != 1:
+                response = b''
+                while len(response) < 4:
+                    chunk = s.recv(4 - len(response))
+                    if not chunk:
+                        break
+                    response += chunk
+                if len(response) != 4:
                     print("c> GET_FILE FAIL")
                     return client.RC.ERROR
-                result = result[0]
+                result = int.from_bytes(response, byteorder='little', signed=True)
                 if result != 0:
                     print("c> GET_FILE FAIL")
                     return client.RC.USER_ERROR

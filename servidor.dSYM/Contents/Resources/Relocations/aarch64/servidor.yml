@@ -2,22 +2,22 @@
 triple:          'arm64-apple-darwin'
 binary-path:     servidor
 relocations:
-  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100001D14, symSize: 0x25C }
-  - { offsetInCU: 0x3F, offset: 0x3F, size: 0x8, addend: 0x0, symName: _log_mutex, symObjAddr: 0x1AA0, symBinAddr: 0x100008000, symSize: 0x0 }
-  - { offsetInCU: 0x1BF, offset: 0x1BF, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100001D14, symSize: 0x25C }
-  - { offsetInCU: 0x278, offset: 0x278, size: 0x8, addend: 0x0, symName: __OSSwapInt16, symObjAddr: 0x25C, symBinAddr: 0x100001F70, symSize: 0x24 }
-  - { offsetInCU: 0x2A0, offset: 0x2A0, size: 0x8, addend: 0x0, symName: _obtener_ip_local, symObjAddr: 0x280, symBinAddr: 0x100001F94, symSize: 0x114 }
-  - { offsetInCU: 0x2F3, offset: 0x2F3, size: 0x8, addend: 0x0, symName: _handle_client, symObjAddr: 0x394, symBinAddr: 0x1000020A8, symSize: 0x270 }
-  - { offsetInCU: 0x337, offset: 0x337, size: 0x8, addend: 0x0, symName: _register_client, symObjAddr: 0x604, symBinAddr: 0x100002318, symSize: 0xF8 }
-  - { offsetInCU: 0x37B, offset: 0x37B, size: 0x8, addend: 0x0, symName: _publish, symObjAddr: 0x6FC, symBinAddr: 0x100002410, symSize: 0x358 }
-  - { offsetInCU: 0x416, offset: 0x416, size: 0x8, addend: 0x0, symName: _connect_user, symObjAddr: 0xA54, symBinAddr: 0x100002768, symSize: 0x22C }
-  - { offsetInCU: 0x485, offset: 0x485, size: 0x8, addend: 0x0, symName: _list_users, symObjAddr: 0xC80, symBinAddr: 0x100002994, symSize: 0x338 }
-  - { offsetInCU: 0x556, offset: 0x556, size: 0x8, addend: 0x0, symName: _list_content, symObjAddr: 0xFB8, symBinAddr: 0x100002CCC, symSize: 0x260 }
-  - { offsetInCU: 0x5FD, offset: 0x5FD, size: 0x8, addend: 0x0, symName: _get_file, symObjAddr: 0x1218, symBinAddr: 0x100002F2C, symSize: 0x154 }
-  - { offsetInCU: 0x691, offset: 0x691, size: 0x8, addend: 0x0, symName: _disconnect_user, symObjAddr: 0x136C, symBinAddr: 0x100003080, symSize: 0x17C }
-  - { offsetInCU: 0x6E8, offset: 0x6E8, size: 0x8, addend: 0x0, symName: _unregister_user, symObjAddr: 0x14E8, symBinAddr: 0x1000031FC, symSize: 0x23C }
-  - { offsetInCU: 0x75C, offset: 0x75C, size: 0x8, addend: 0x0, symName: _delete_file, symObjAddr: 0x1724, symBinAddr: 0x100003438, symSize: 0x314 }
-  - { offsetInCU: 0x847, offset: 0x847, size: 0x8, addend: 0x0, symName: _log_operation, symObjAddr: 0x1A38, symBinAddr: 0x10000374C, symSize: 0x68 }
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100001D20, symSize: 0x25C }
+  - { offsetInCU: 0x3F, offset: 0x3F, size: 0x8, addend: 0x0, symName: _log_mutex, symObjAddr: 0x1A98, symBinAddr: 0x100008000, symSize: 0x0 }
+  - { offsetInCU: 0x1BF, offset: 0x1BF, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100001D20, symSize: 0x25C }
+  - { offsetInCU: 0x278, offset: 0x278, size: 0x8, addend: 0x0, symName: __OSSwapInt16, symObjAddr: 0x25C, symBinAddr: 0x100001F7C, symSize: 0x24 }
+  - { offsetInCU: 0x2A0, offset: 0x2A0, size: 0x8, addend: 0x0, symName: _obtener_ip_local, symObjAddr: 0x280, symBinAddr: 0x100001FA0, symSize: 0x114 }
+  - { offsetInCU: 0x2F3, offset: 0x2F3, size: 0x8, addend: 0x0, symName: _handle_client, symObjAddr: 0x394, symBinAddr: 0x1000020B4, symSize: 0x270 }
+  - { offsetInCU: 0x337, offset: 0x337, size: 0x8, addend: 0x0, symName: _register_client, symObjAddr: 0x604, symBinAddr: 0x100002324, symSize: 0xF8 }
+  - { offsetInCU: 0x37B, offset: 0x37B, size: 0x8, addend: 0x0, symName: _publish, symObjAddr: 0x6FC, symBinAddr: 0x10000241C, symSize: 0x358 }
+  - { offsetInCU: 0x416, offset: 0x416, size: 0x8, addend: 0x0, symName: _connect_user, symObjAddr: 0xA54, symBinAddr: 0x100002774, symSize: 0x220 }
+  - { offsetInCU: 0x485, offset: 0x485, size: 0x8, addend: 0x0, symName: _list_users, symObjAddr: 0xC74, symBinAddr: 0x100002994, symSize: 0x338 }
+  - { offsetInCU: 0x556, offset: 0x556, size: 0x8, addend: 0x0, symName: _list_content, symObjAddr: 0xFAC, symBinAddr: 0x100002CCC, symSize: 0x260 }
+  - { offsetInCU: 0x5FD, offset: 0x5FD, size: 0x8, addend: 0x0, symName: _get_file, symObjAddr: 0x120C, symBinAddr: 0x100002F2C, symSize: 0x154 }
+  - { offsetInCU: 0x691, offset: 0x691, size: 0x8, addend: 0x0, symName: _disconnect_user, symObjAddr: 0x1360, symBinAddr: 0x100003080, symSize: 0x17C }
+  - { offsetInCU: 0x6E8, offset: 0x6E8, size: 0x8, addend: 0x0, symName: _unregister_user, symObjAddr: 0x14DC, symBinAddr: 0x1000031FC, symSize: 0x23C }
+  - { offsetInCU: 0x75C, offset: 0x75C, size: 0x8, addend: 0x0, symName: _delete_file, symObjAddr: 0x1718, symBinAddr: 0x100003438, symSize: 0x314 }
+  - { offsetInCU: 0x847, offset: 0x847, size: 0x8, addend: 0x0, symName: _log_operation, symObjAddr: 0x1A2C, symBinAddr: 0x10000374C, symSize: 0x68 }
   - { offsetInCU: 0x26, offset: 0xABA, size: 0x8, addend: 0x0, symName: _registrar_usuario, symObjAddr: 0x0, symBinAddr: 0x1000037B4, symSize: 0x1AC }
   - { offsetInCU: 0x3F, offset: 0xAD3, size: 0x8, addend: 0x0, symName: _usuarios, symObjAddr: 0x1130, symBinAddr: 0x100008040, symSize: 0x0 }
   - { offsetInCU: 0x114, offset: 0xBA8, size: 0x8, addend: 0x0, symName: _num_usuarios, symObjAddr: 0x1138, symBinAddr: 0x100008048, symSize: 0x0 }

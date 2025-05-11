@@ -213,7 +213,7 @@ void *connect_user(int cliente_sd) {
 
     // recv espera un int
     if (recv(cliente_sd, &puerto, sizeof(puerto), 0) <= 0) {
-        perror("Error leyendo el puerto del usuario");
+        //perror("Error leyendo el puerto del usuario");
         send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
@@ -221,7 +221,7 @@ void *connect_user(int cliente_sd) {
     // Leer la IP que el cliente ha enviado explícitamente
     char ip_cliente[64];
     if (readLine(cliente_sd, ip_cliente, sizeof(ip_cliente)) < 1) {
-        perror("Error leyendo IP del cliente");
+        //perror("Error leyendo IP del cliente");
         send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
@@ -527,7 +527,7 @@ void obtener_ip_local(char *ip_local, size_t size) {
 void log_operation(const char *op, const char *user){
 
     pthread_mutex_lock(&log_mutex);
-    printf("OPERATION %s FROM %s\ns> ", op, user);
+    printf("s> OPERATION %s FROM %s\ns> ", op, user);
     fflush(stdout);
     pthread_mutex_unlock(&log_mutex);
 }
