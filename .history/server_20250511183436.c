@@ -115,15 +115,14 @@ void *handle_client(void *arg) {
 void *register_client(int cliente_sd) {
     char nombre[256];
     uint8_t resultado = 2;
-    // printf("DEBUG: esperando nombre del usuario...\n");
     if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1) {
         perror("Error leyendo el nombre del usuario");
         send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
-    // printf("DEBUG: nombre recibido: '%s'\n", nombre);
-    resultado = registrar_usuario(nombre);
     log_operation("REGISTER", nombre);
+   
+    resultado = registrar_usuario(nombre);
     send(cliente_sd, &resultado, 1, 0);
     return NULL;
 }

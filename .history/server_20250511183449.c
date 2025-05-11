@@ -112,6 +112,7 @@ void *handle_client(void *arg) {
     return NULL;
 }
 
+
 void *register_client(int cliente_sd) {
     char nombre[256];
     uint8_t resultado = 2;
