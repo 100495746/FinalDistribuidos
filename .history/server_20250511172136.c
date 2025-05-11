@@ -82,7 +82,7 @@ void *handle_client(void *arg) {
         return NULL;
     }
 
-    log_operation(comando, "UNKNOWN");
+    log_operation(comando, cliente_sd);
 
     // según que hayamos escrito en la terminal...
     if (strcmp(comando, "REGISTER") == 0) {
@@ -95,6 +95,8 @@ void *handle_client(void *arg) {
         list_users(cliente_sd);
     } else if (strcmp(comando, "LIST_CONTENT") == 0) {
         list_content(cliente_sd);
+    } else if (strcmp(comando, "GET_FILE") == 0) {
+        get_file(cliente_sd);
     } else if (strcmp(comando, "DISCONNECT") == 0) {
         disconnect_user(cliente_sd);
     } else if (strcmp(comando, "UNREGISTER") == 0) {
@@ -122,7 +124,6 @@ void *register_client(int cliente_sd) {
     }
     // printf("DEBUG: nombre recibido: '%s'\n", nombre);
     resultado = registrar_usuario(nombre);
-    log_operation("REGISTER", nombre);
     send(cliente_sd, &resultado, 1, 0);
     return NULL;
 }
@@ -152,7 +153,6 @@ void *publish(int cliente_sd) {
     if (!u->conectado){
         resultado = 2;
         send(cliente_sd, &resultado, 1, 0);
-        return NULL;
     }
     if (readLine(cliente_sd, path, sizeof(path)) < 1) {
         perror("Error leyendo el path");
@@ -192,7 +192,6 @@ void *publish(int cliente_sd) {
     //     u->ficheros[u->num_ficheros - 1].path,
     //     u->ficheros[u->num_ficheros - 1].descripcion);
 
-    log_operation("PUBLISH", nombre);
     resultado = 0;
     send(cliente_sd, &resultado, 1, 0); 
     return NULL;
@@ -245,7 +244,6 @@ void *connect_user(int cliente_sd) {
     if (u->conectado){
         resultado = 2;
         send(cliente_sd, &resultado, 1, 0);
-        return NULL;
     }
 
     strncpy(u->ip, ip_cliente, sizeof(u->ip));
@@ -253,7 +251,6 @@ void *connect_user(int cliente_sd) {
     u->puerto = puerto;
     u->conectado = 1;
 
-    log_operation("CONNECT", nombre);
     resultado = 0;
     send(cliente_sd, &resultado, 1, 0);
     return NULL;
@@ -263,6 +260,7 @@ void *connect_user(int cliente_sd) {
 void *list_users(int cliente_sd) {
     char nombre[256];
     uint8_t resultado = 4;
+    char linea[512];
     if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1 ){
         send(cliente_sd, &resultado, 1, 0);
         perror("Error leyendo nombre en LIST_CONTENT");
@@ -288,10 +286,9 @@ void *list_users(int cliente_sd) {
         if (usuarios[i].conectado) { n++; }
     }
 
-    log_operation("LIST_USERS", nombre);
     resultado = 0;
     send(cliente_sd, &resultado, 1, 0);
-    char n_clientes[12];
+    char n_clientes;
     snprintf(n_clientes, sizeof(n_clientes), "%d", n);
     sendMessage(cliente_sd, n_clientes);
 
@@ -341,8 +338,6 @@ void *list_content(int cliente_sd) {
         send(cliente_sd, &resultado, 1, 0);
         return NULL;
     }
-
-    log_operation("LIST_CONTENT", nombre);
     resultado = 0;
     send(cliente_sd, &resultado, 1, 0);
 
@@ -355,6 +350,33 @@ void *list_content(int cliente_sd) {
     }
     return NULL;
 }
+// ESTA CREO QUE ES ENTRE CLIENTES ASI QUE NO DEBERIA ESTAR AQUI
+void *get_file(int cliente_sd) {
+    char nombre[256], fichero[256], local[256];
+
+    if (readLine(cliente_sd, nombre, sizeof(nombre)) < 1 ||
+        readLine(cliente_sd, fichero, sizeof(fichero)) < 1 ||
+        readLine(cliente_sd, local, sizeof(local)) < 1) {
+        perror("Error leyendo datos en GET_FILE");
+        return NULL;
+    }
+
+    Usuario *u = buscar_usuario(nombre);
+    if (!u || !u->conectado) {
+        int err = -1;
+        send(cliente_sd, &err, sizeof(err), 0);
+        return NULL;
+    }
+
+    // Aquí el cliente C debe iniciar la conexión con el otro cliente usando u->ip y u->puerto.
+    // Solo se devuelve 0 si todo está bien y el servidor se lo permite.
+    int ok = 0;
+    send(cliente_sd, &ok, sizeof(ok), 0);
+    return NULL;
+}
+
+
+// Prepara el reenvío de un fichero (estructura base)
 
 
 // Marca al usuario como desconectado
@@ -371,19 +393,16 @@ void *disconnect_user(int cliente_sd) {
     if (!u) {
         resultado = 1;
         send(cliente_sd, &resultado, 1, 0);
-        return NULL;
     }
     if (!u->conectado){
         resultado = 2;
         send(cliente_sd, &resultado, 1, 0);
-        return NULL;
     }
 
     u->conectado = 0;
     u->ip[0] = '\0';
     u->puerto = -1;
     
-    log_operation("DISCONNECT", nombre);
     resultado = 0;
     send(cliente_sd, &resultado, 1, 0);
     return NULL;
@@ -418,7 +437,6 @@ void *unregister_user(int cliente_sd) {
         usuarios[pos] = usuarios[num_usuarios - 1];
     }
     num_usuarios--;
-    log_operation("UNREGISTER", nombre);
     resultado = 0;
     send(cliente_sd, &resultado, 1, 0);
     return NULL;   
@@ -481,7 +499,6 @@ void *delete_file(int cliente_sd) {
         }
     }
 
-    log_operation("DELETE", nombre);
     resultado = 0;
     send(cliente_sd, &resultado, 1, 0);
     return NULL;
